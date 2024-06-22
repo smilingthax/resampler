@@ -1,0 +1,5 @@
+*.d
+*.o
+test1
+poc/test_sincwin_table
+poc/test_sincwin_table_polyphase
