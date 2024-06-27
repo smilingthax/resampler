@@ -1,7 +1,7 @@
 SOURCES=resampler.cpp
 EXEC=test1
 
-CFLAGS=-Wall -O3
+CFLAGS=-Wall -O3 -ffast-math
 CXXFLAGS=-std=c++11
 CPPFLAGS=$(CFLAGS) $(FLAGS)
 

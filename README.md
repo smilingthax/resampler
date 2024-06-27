@@ -29,6 +29,7 @@ TODO:
 * Expose current input -> output delay (useful for conversion between clock-domains via  adaptive resampling,
   cf. https://kokkinizita.linuxaudio.org/papers/adapt-resamp.pdf).
 * Multi-channel (planar? interleaved?)...
+* Support setting fractional phase-shift with `ratio = 1.0`?
 
 IDEAs:
 * Allow double (currently: float) samples?

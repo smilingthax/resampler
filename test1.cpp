@@ -11,7 +11,7 @@ in[31+4] = 1000.0f;
   resamp.process(out, olen, in, ilen);
   printf("olen: %d, ilen %d\n", olen, ilen);
 
-  for (size_t i = 0; i < 10; i++) printf("%f ", out[i]); printf("\n");
+  for (size_t i = 0; i < 10; i++) { printf("%f ", out[i]); } printf("\n");
 
   return 0;
 }

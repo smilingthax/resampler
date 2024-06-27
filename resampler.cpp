@@ -1,6 +1,7 @@
 #include "resampler.h"
 #include <stdexcept>
 #include <algorithm>
+#include <string.h>
 
 #if __cpp_lib_math_constants >= 201907L
 #include <numbers>
@@ -101,14 +102,14 @@ void Resampler::calc_fir(float phase)
 static float dot(const float *as, const float *bs, uint32_t len)
 {
   // https://www.earlevel.com/main/2012/12/03/a-note-about-de-normalization/
-  float ret = 1e-21; // prevent denormals
+  float ret = 1e-30; // prevent denormals
   for (uint32_t i = 0; i < len; i++) {
     // ret += (*as) * (*bs);
     ret = fmaf((*as), (*bs), ret);
     ++as;
     ++bs;
   }
-  return ret - 1e-21;
+  return ret - 1e-30;
 }
 
 void Resampler::process2(float *&out, uint32_t &olen, const float *&in, uint32_t &ilen)
