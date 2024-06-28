@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <string.h>
 
+// NOTE: don't use separate sincwin_*.c impl, inlining of calc_fir improves performance!
+
 #if __cpp_lib_math_constants >= 201907L
 #include <numbers>
 constexpr float pi = std::numbers::pi<float>;
@@ -59,15 +61,25 @@ void Resampler::gen_sinc_table(uint32_t fir_hlen, uint32_t num_phases, float fre
   const uint32_t hlen = fir_hlen * num_phases;
   // assert(hlen > 0);
   sinc_table.reset(new float[hlen + 1]); // uninitialized ("for overwrite")
-  sinc_table[0] = 1.0f * window(0.0f); // (window(0) should also be 1.0f ...)
-  for (uint32_t i = 1; i < hlen; i++) {
-    const float pos = (float)i / hlen;
-    const float x = pos * fir_hlen * freq * pi;
-    sinc_table[i] = sinf(x) / x * window(pos);
+
+  float *t = sinc_table.get();
+  for (uint32_t phase = num_phases - 1; phase > 0; phase--) {
+    for (uint32_t j = 0; j < halflen; j++) {
+      const float pos = (j * num_phases + phase) / (float)hlen;
+      const float x = pos * halflen * freq * M_PI;
+      *t++ = sinf(x) / x * window(pos);
+    }
+  }
+  // phase 0 is special
+  *t++ = 1.0f * window(0.0f); // (window_fn(0) should also be 1.0f ...)
+  for (uint32_t j = 1; j < halflen; j++) {
+    const float pos = (j * num_phases + 0) / (float)hlen;
+    const float x = pos * halflen * freq * M_PI;
+    *t++ = sinf(x) / x * window(pos);
   }
   // we can't rely on window(1) to be zero, but calc_fir needs/uses non-symmetric half-open interval [-1,1) ...
   // -> assume window to be infinitesimally smaller: [-1+eps,1-eps] -> (-1,1)
-  sinc_table[hlen] = 0.0f; // used as last coeff in phase=0, and for interpolation
+  *t++ = 0.0f; // used as last coeff in phase=0
   this->num_phases = num_phases;
 }
 
@@ -82,19 +94,23 @@ void Resampler::calc_fir(float phase)
   const uint32_t p = (uint32_t)phase;
   phase -= p;
 
-  const float *s = sinc_table.get() + p;
+  const float *s0 = sinc_table.get() + (num_phases - 1 - p) * halflen,
+              *s1 = (p == num_phases - 1) ? sinc_table.get() + (num_phases - 1) * halflen + 1 : s0 - halflen;
   float *d = fir.get() + halflen - 1;
   for (uint32_t i = 0; i < halflen; i++) {
-    *d = s[0] * (1.0f - phase) + s[1] * phase;
-    s += num_phases;
+    *d = *s0 * (1.0f - phase) + *s1 * phase;
+    ++s0;
+    ++s1;
     --d;
   }
 
-  s = sinc_table.get() + (num_phases - 1 - p);
+  s1 = sinc_table.get() + p * halflen;
+  s0 = (p == 0) ? sinc_table.get() + (num_phases - 1) * halflen + 1 : s1 - halflen;
   d = fir.get() + halflen;
   for (uint32_t i = 0; i < halflen; i++) {
-    *d = s[1] * (1.0f - phase) + s[0] * phase;
-    s += num_phases;
+    *d = *s0 * (1.0f - phase) + *s1 * phase;
+    ++s0;
+    ++s1;
     ++d;
   }
 }
