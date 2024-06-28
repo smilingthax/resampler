@@ -1,7 +1,9 @@
 SINCWIN=sincwin_ref sincwin_linear sincwin_linear_polyphase sincwin_quadratic sincwin_quadratic_polyphase
 
-SOURCES=$(SINCWIN:%=%.c) perf.cpp
-EXEC=$(SINCWIN:%=perf_%)
+SOURCES=$(SINCWIN:%=%.c) perf.cpp approx.cpp
+EXEC_PERF=$(SINCWIN:%=perf_%)
+EXEC_APPROX=$(SINCWIN:%=approx_%)
+EXEC=$(EXEC_PERF) $(EXEC_APPROX)
 
 FLAGS=-Wall -O3  -ffast-math    # -march=native
 CFLAGS=
@@ -30,9 +32,15 @@ clean:
 %.d: %.cpp
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM -MT"$@" -MT"$*.o" -o $@ $<  2> /dev/null
 
-$(EXEC): perf_%: %.o perf.o
+$(EXEC_PERF): perf_%: %.o perf.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-perf: $(filter-out perf_sincwin_ref,$(EXEC))
+$(EXEC_APPROX): approx_%: %.o approx.o
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+perf: $(filter-out perf_sincwin_ref,$(EXEC_PERF))
+	@for i in $^; do echo $$i; ./$$i; done
+
+approx: $(EXEC_APPROX)
 	@for i in $^; do echo $$i; ./$$i; done
 
