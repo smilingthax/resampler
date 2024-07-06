@@ -16,8 +16,8 @@ Usage:
   Resampler resam(1.5f); // upsample
 
   while (...more data...) {
-    resamp.process(out, olen, in, ilen);
-    // olen, ilen are updated accordingly.
+    iused = resamp.process(out, olen, in, ilen);
+    // olen returns "oused"
 // or:
     resamp.process2(out, olen, in, ilen);
     // out, olen, in, ilen are all updated.

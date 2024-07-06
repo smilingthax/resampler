@@ -8,11 +8,13 @@ public:
 
   void process2(float *&out, uint32_t &olen, const float *&in, uint32_t &ilen);
 
-  void process(float *out, uint32_t &olen, const float *in, uint32_t &ilen) {
+  // returns number of used input samples
+  uint32_t process(float *out, uint32_t &olen, const float *in, uint32_t ilen) {
     float *o = out;
     const float *i = in;
     process2(o, olen, i, ilen);
     olen = o - out;  // return written, not remaining
+    return i - in;
   }
 
 private:

@@ -26,7 +26,7 @@ Resampler::Resampler(float ratio)
 
   float f_filt = 0.95f;
   const uint32_t sinc_hperiods = 32; // "number of periods" / 2
-  const uint32_t sinc_resolution = 120; // number of "phases" between periods (assuming freq == 1.0)
+  const uint32_t sinc_resolution = 256; // number of "phases" between periods (assuming freq == 1.0)
 
   // assert(f_filt <= 1.0f);
 #ifdef SCALE_FIR_BY_FREQ

@@ -8,8 +8,8 @@ int main(int argc, char **argv)
 in[31+4] = 1000.0f;
 
   uint32_t ilen=63 + 9, olen=10;
-  resamp.process(out, olen, in, ilen);
-  printf("olen: %d, ilen %d\n", olen, ilen);
+  uint32_t iused = resamp.process(out, olen, in, ilen);
+  printf("oused: %d, iused: %d, iremain: %d\n", olen, iused, ilen - iused);
 
   for (size_t i = 0; i < 10; i++) { printf("%f ", out[i]); } printf("\n");
 
