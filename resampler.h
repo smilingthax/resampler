@@ -12,6 +12,7 @@ public:
     float *o = out;
     const float *i = in;
     process2(o, olen, i, ilen);
+    olen = o - out;  // return written, not remaining
   }
 
 private:

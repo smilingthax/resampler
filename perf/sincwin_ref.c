@@ -38,14 +38,15 @@ void sincwin_calc_fir(sincwin_t *sw, float *dst, float phase)
 
   const float freq = sw->freq;
   float (*window_fn)(float pos) = sw->window_fn;
+  const float atten = freq; // attenuation to prevent clipping (-> all energy above freq could also end up in output)
 
   for (int32_t i = 0, len = 2 * halflen; i < len; i++) {
     const float pos = (i - ((int32_t)halflen - 1) - phase) / halflen;
     const float x = pos * halflen * freq * M_PI;
     if (pos == 0.0f) {
-      dst[i] = 1.0f;
+      dst[i] = atten * 1.0f;
     } else {
-      dst[i] = sinf(x) / x * window_fn(pos);
+      dst[i] = atten * sinf(x) / x * window_fn(pos);
     }
   }
 #if 1 // fir output is shifted left by 1, for table based method, and require outermost coefficients to be 0

@@ -21,20 +21,22 @@ sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, flo
   ret->halflen = halflen;
   ret->num_phases = num_phases;
 
+  const float atten = freq; // attenuation to prevent clipping (-> all energy above freq could also end up in output)
+
   float *t = ret->table;
   for (uint32_t phase = num_phases - 1; phase > 0; phase--) {
     for (uint32_t j = 0; j < halflen; j++) {
       const float pos = (j * num_phases + phase) / (float)hlen;
       const float x = pos * halflen * freq * M_PI;
-      *t++ = sinf(x) / x * window_fn(pos);
+      *t++ = atten * sinf(x) / x * window_fn(pos);
     }
   }
   // phase 0 is special
-  *t++ = 1.0f * window_fn(0.0f); // (window_fn(0) should also be 1.0f ...)
+  *t++ = atten * 1.0f * window_fn(0.0f); // (window_fn(0) should also be 1.0f ...)
   for (uint32_t j = 1; j < halflen; j++) {
     const float pos = (j * num_phases + 0) / (float)hlen;
     const float x = pos * halflen * freq * M_PI;
-    *t++ = sinf(x) / x * window_fn(pos);
+    *t++ = atten * sinf(x) / x * window_fn(pos);
   }
   // we can't rely on window_fn(1) to be zero, but calc_fir needs/uses non-symmetric half-open interval [-1,1) ...
   // -> assume window to be infinitesimally smaller: [-1+eps,1-eps] -> (-1,1)

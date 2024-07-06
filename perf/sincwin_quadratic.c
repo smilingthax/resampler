@@ -45,15 +45,17 @@ sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, flo
   ret->halflen = halflen;
   ret->num_phases = num_phases;
 
+  const float atten = freq; // attenuation to prevent clipping (-> all energy above freq could also end up in output)
+
   // Trick: c is always the direct value, compute these first
 #ifdef INTERLEAVED_TABLE
   struct qcoff_t *t = ret->table;
-  t->c = 1.0f * window_fn(0.0f); // (window_fn(0) should also be 1.0f ...)
+  t->c = atten * 1.0f * window_fn(0.0f); // (window_fn(0) should also be 1.0f ...)
   ++t;
   for (uint32_t i = 1; i < hlen; i++) {
     const float pos = (float)i / hlen;
     const float x = pos * halflen * freq * M_PI;
-    t->c = sinf(x) / x * window_fn(pos);
+    t->c = atten * sinf(x) / x * window_fn(pos);
     ++t;
   }
   // we can't rely on window_fn(1) to be zero, but calc_fir needs/uses non-symmetric half-open interval [-1,1) ...
@@ -79,11 +81,11 @@ sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, flo
         *bs = ret->table + (hlen + 1),
         *cs = ret->table + 2 * (hlen + 1);
 
-  *cs++ = 1.0f * window_fn(0.0f); // (window_fn(0) should also be 1.0f ...)
+  *cs++ = atten * 1.0f * window_fn(0.0f); // (window_fn(0) should also be 1.0f ...)
   for (uint32_t i = 1; i < hlen; i++) {
     const float pos = (float)i / hlen;
     const float x = pos * halflen * freq * M_PI;
-    *cs++ = sinf(x) / x * window_fn(pos);
+    *cs++ = atten * sinf(x) / x * window_fn(pos);
   }
   // we can't rely on window_fn(1) to be zero, but calc_fir needs/uses non-symmetric half-open interval [-1,1) ...
   // -> assume window to be infinitesimally smaller: [-1+eps,1-eps] -> (-1,1)
