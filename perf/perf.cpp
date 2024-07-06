@@ -11,6 +11,7 @@ int main()
 {
 #define HLEN 32
 //#define PHASES 256
+//#define PHASES 65536
 #define PHASES 40
 //#define FREQ 1.0f
 #define FREQ 0.95f

@@ -1,4 +1,4 @@
-SINCWIN=sincwin_ref sincwin_linear sincwin_linear_polyphase sincwin_quadratic sincwin_quadratic_polyphase
+SINCWIN=sincwin_ref sincwin_nearest sincwin_nearest_polyphase sincwin_linear sincwin_linear_polyphase sincwin_quadratic sincwin_quadratic_polyphase
 
 SOURCES=$(SINCWIN:%=%.c) perf.cpp approx.cpp
 EXEC_PERF=$(SINCWIN:%=perf_%)

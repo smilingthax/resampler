@@ -36,6 +36,7 @@ static float sumdiff(const float *a, const float *b, size_t len)
 int main(int argc, char **argv)
 {
 #define HLEN 32
+//#define PHASES 65536  // esp. nearest: when linear uses 2**8, nearest needs about 2**16...
 //#define PHASES 256  // esp. linear  -> CCRMA paper says: half the desired output resolution, i.e. 16 bit -> 2**8,  or float 23 bit -> 2**11.5 ...
 //#define PHASES 120  // esp. linear
 #define PHASES 40     // quadratic stores 3 coeffs per phase! (linear computes it on-the-fly)
