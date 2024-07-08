@@ -5,10 +5,11 @@
 struct _sincwin_t {
   uint32_t halflen;
   float freq;
-  float (*window_fn)(float pos);
+  float (*window_fn)(float pos, void *user);
+  void *user;
 };
 
-sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, float (*window_fn)(float pos))
+sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, float (*window_fn)(float pos, void *user), void *user)
 {
   // assert(halflen > 0); // num_phases not used ...
   // assert(freq > 0.0f && freq <= 1.0f);
@@ -21,6 +22,7 @@ sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, flo
   ret->halflen = halflen;
   ret->freq = freq;
   ret->window_fn = window_fn;
+  ret->user = user;
 
   return ret;
 }
@@ -37,7 +39,8 @@ void sincwin_calc_fir(sincwin_t *sw, float *dst, float phase)
   const uint32_t halflen = sw->halflen;
 
   const float freq = sw->freq;
-  float (*window_fn)(float pos) = sw->window_fn;
+  float (*window_fn)(float pos, void *user) = sw->window_fn;
+  void *user = sw->user;
   const float atten = freq; // attenuation to prevent clipping (-> all energy above freq could also end up in output)
 
   for (int32_t i = 0, len = 2 * halflen; i < len; i++) {
@@ -46,7 +49,7 @@ void sincwin_calc_fir(sincwin_t *sw, float *dst, float phase)
     if (pos == 0.0f) {
       dst[i] = atten * 1.0f;
     } else {
-      dst[i] = atten * sinf(x) / x * window_fn(pos);
+      dst[i] = atten * sinf(x) / x * window_fn(pos, user);
     }
   }
 #if 1 // fir output is shifted left by 1, for table based method, and require outermost coefficients to be 0

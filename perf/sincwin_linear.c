@@ -7,7 +7,7 @@ struct _sincwin_t {
   float table[];
 };
 
-sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, float (*window_fn)(float pos))
+sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, float (*window_fn)(float pos, void *user), void *user)
 {
   const uint32_t hlen = halflen * num_phases;
   // assert(hlen > 0);
@@ -24,11 +24,11 @@ sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, flo
   const float atten = freq; // attenuation to prevent clipping (-> all energy above freq could also end up in output)
 
   float *t = ret->table;
-  *t++ = atten * 1.0f * window_fn(0.0f); // (window_fn(0) should also be 1.0f ...)
+  *t++ = atten * 1.0f * window_fn(0.0f, user); // (window_fn(0) should also be 1.0f ...)
   for (uint32_t i = 1; i < hlen; i++) {
     const float pos = (float)i / hlen;
     const float x = pos * halflen * freq * M_PI;
-    *t++ = atten * sinf(x) / x * window_fn(pos);
+    *t++ = atten * sinf(x) / x * window_fn(pos, user);
   }
   // we can't rely on window_fn(1) to be zero, but calc_fir needs/uses non-symmetric half-open interval [-1,1) ...
   // -> assume window to be infinitesimally smaller: [-1+eps,1-eps] -> (-1,1)

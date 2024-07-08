@@ -27,7 +27,7 @@ struct _sincwin_t {
 };
 
 // FIXME...: hlen >= 2
-sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, float (*window_fn)(float pos))
+sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, float (*window_fn)(float pos, void *user), void *user)
 {
   const uint32_t hlen = halflen * num_phases;
   // assert(hlen > 0);
@@ -50,12 +50,12 @@ sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, flo
   // Trick: c is always the direct value, compute these first
 #ifdef INTERLEAVED_TABLE
   struct qcoff_t *t = ret->table;
-  t->c = atten * 1.0f * window_fn(0.0f); // (window_fn(0) should also be 1.0f ...)
+  t->c = atten * 1.0f * window_fn(0.0f, user); // (window_fn(0) should also be 1.0f ...)
   ++t;
   for (uint32_t i = 1; i < hlen; i++) {
     const float pos = (float)i / hlen;
     const float x = pos * halflen * freq * M_PI;
-    t->c = atten * sinf(x) / x * window_fn(pos);
+    t->c = atten * sinf(x) / x * window_fn(pos, user);
     ++t;
   }
   // we can't rely on window_fn(1) to be zero, but calc_fir needs/uses non-symmetric half-open interval [-1,1) ...
@@ -76,16 +76,17 @@ sincwin_t *sincwin_create(uint32_t halflen, uint32_t num_phases, float freq, flo
   ++t;
   calc_qcoeff(&t->a, &t->b, t[-2].c, t[-1].c, t[0].c, 0.0f, 0.0f);
   //++t;
+
 #else
   float *as = ret->table,
         *bs = ret->table + (hlen + 1),
         *cs = ret->table + 2 * (hlen + 1);
 
-  *cs++ = atten * 1.0f * window_fn(0.0f); // (window_fn(0) should also be 1.0f ...)
+  *cs++ = atten * 1.0f * window_fn(0.0f, user); // (window_fn(0) should also be 1.0f ...)
   for (uint32_t i = 1; i < hlen; i++) {
     const float pos = (float)i / hlen;
     const float x = pos * halflen * freq * M_PI;
-    *cs++ = atten * sinf(x) / x * window_fn(pos);
+    *cs++ = atten * sinf(x) / x * window_fn(pos, user);
   }
   // we can't rely on window_fn(1) to be zero, but calc_fir needs/uses non-symmetric half-open interval [-1,1) ...
   // -> assume window to be infinitesimally smaller: [-1+eps,1-eps] -> (-1,1)
@@ -141,6 +142,7 @@ void sincwin_calc_fir(sincwin_t *sw, float *dst, float phase)
     s += num_phases;
     ++d;
   }
+
 #else
   const uint32_t hlen1 = halflen * num_phases + 1;
   const float *as = sw->table + p,

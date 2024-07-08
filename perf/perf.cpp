@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "sincwin.h"
 
-static float window(float pos)
+static float window(float pos, void *user)
 {
   return 1.0f;   // FIXME
 }
@@ -16,7 +16,7 @@ int main()
 //#define FREQ 1.0f
 #define FREQ 0.95f
 
-  sincwin_t *sw = sincwin_create(HLEN, PHASES, FREQ, window);
+  sincwin_t *sw = sincwin_create(HLEN, PHASES, FREQ, window, NULL);
   if (!sw) {
     fprintf(stderr, "sincwin_create failed\n");
     return 1;

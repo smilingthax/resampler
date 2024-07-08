@@ -17,7 +17,7 @@ typedef struct _sincwin_t sincwin_t;
 }
 
 // real window is necessary to get good approximation values...
-static float window(float pos)
+static float window(float pos, void *user)
 {
   return 0.42f + 0.5f * cosf(M_PI * pos) + 0.08f * cosf(2 * M_PI * pos); // blackman
 }
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 //#define FREQ 1.0f
 #define FREQ 0.95f
 
-  sincwin_ref_t *sr = sincwin_ref_create(HLEN, PHASES, FREQ, window);
+  sincwin_ref_t *sr = sincwin_ref_create(HLEN, PHASES, FREQ, window, NULL);
   if (!sr) {
     fprintf(stderr, "sincwin_ref_create failed\n");
     return 1;
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 
   float fir_ref[2*HLEN];
 
-  sincwin_t *sw = sincwin_create(HLEN, PHASES, FREQ, window);
+  sincwin_t *sw = sincwin_create(HLEN, PHASES, FREQ, window, NULL);
   if (!sw) {
     fprintf(stderr, "sincwin_create failed\n");
     return 1;
