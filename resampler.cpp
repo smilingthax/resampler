@@ -1,9 +1,8 @@
 #include "resampler.h"
+#include "window.h"
 #include <stdexcept>
 #include <algorithm>
 #include <string.h>
-
-// NOTE: don't use separate sincwin_*.c impl, inlining of calc_fir improves performance!
 
 #if __cpp_lib_math_constants >= 201907L
 #include <numbers>
@@ -14,14 +13,6 @@ constexpr float pi = M_PI;
 #endif
 
 //#define SCALE_FIR_BY_FREQ
-
-// pos = [0,1]  (or [-1,1])
-static float window(float pos, void *user)
-{
-  // blackman
-  return 0.42f + 0.5f * cosf(pi * pos) + 0.08f * cosf(2 * pi * pos);
-  // return 0.5f * (1.0f - alpha) + 0.5f * cosf(pi * pos) + 0.5f * alpha * cosf(2 * pi * pos);
-}
 
 Resampler::Resampler(float ratio)
   : ipos(0), iend(0),
@@ -44,12 +35,16 @@ Resampler::Resampler(float ratio)
   halflen = (uint32_t)ceilf(sinc_hperiods * std::max(1.0f, istep));
 #endif
 
+  window_u win;
+  window_func_t window_fn = window_init_kaiser(win);
+//  window_func_t window_fn = window_init_blackman(win);
+
   if (istep > 1.0f) { // downsample
     const float rscale = (float)sinc_hperiods / halflen;
     // NOTE: rscale < 1.0f: because sinc is wider, number of phases can be reduced for a given step distance
-    gen_sinc_table(halflen, sinc_resolution * rscale, f_filt * rscale, window, NULL); // (halflen = sinc_hperiods / rscale)
+    gen_sinc_table(halflen, sinc_resolution * rscale, f_filt * rscale, window_fn, &win); // (halflen = sinc_hperiods / rscale)
   } else { // upsample
-    gen_sinc_table(halflen, sinc_resolution, f_filt, window, NULL);
+    gen_sinc_table(halflen, sinc_resolution, f_filt, window_fn, &win);
   }
   fir.reset(new float[2 * halflen]); // uninitialized ("for overwrite")
   // assert(istep < 2 * halflen); // fir.size());
@@ -58,7 +53,7 @@ Resampler::Resampler(float ratio)
 }
 
 
-void Resampler::gen_sinc_table(uint32_t fir_hlen, uint32_t num_phases, float freq, float (*window)(float pos, void *user), void *user)
+void Resampler::gen_sinc_table(uint32_t fir_hlen, uint32_t num_phases, float freq, float (*window_fn)(float pos, void *user), void *user)
 {
   const uint32_t hlen = fir_hlen * num_phases;
   // assert(hlen > 0);
@@ -71,17 +66,17 @@ void Resampler::gen_sinc_table(uint32_t fir_hlen, uint32_t num_phases, float fre
     for (uint32_t j = 0; j < halflen; j++) {
       const float pos = (j * num_phases + phase) / (float)hlen;
       const float x = pos * halflen * freq * pi;
-      *t++ = atten * sinf(x) / x * window(pos, user);
+      *t++ = atten * sinf(x) / x * window_fn(pos, user);
     }
   }
   // phase 0 is special
-  *t++ = atten * 1.0f * window(0.0f, user); // (window_fn(0) should also be 1.0f ...)
+  *t++ = atten * 1.0f * window_fn(0.0f, user); // (window_fn(0) should also be 1.0f ...)
   for (uint32_t j = 1; j < halflen; j++) {
     const float pos = (j * num_phases + 0) / (float)hlen;
     const float x = pos * halflen * freq * pi;
-    *t++ = atten * sinf(x) / x * window(pos, user);
+    *t++ = atten * sinf(x) / x * window_fn(pos, user);
   }
-  // we can't rely on window(1) to be zero, but calc_fir needs/uses non-symmetric half-open interval [-1,1) ...
+  // we can't rely on window_fn(1) to be zero, but calc_fir needs/uses non-symmetric half-open interval [-1,1) ...
   // -> assume window to be infinitesimally smaller: [-1+eps,1-eps] -> (-1,1)
   *t++ = 0.0f; // used as last coeff in phase=0
   this->num_phases = num_phases;

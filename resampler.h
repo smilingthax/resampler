@@ -18,7 +18,7 @@ public:
   }
 
 private:
-  void gen_sinc_table(uint32_t fir_hlen, uint32_t phases, float freq, float (*window)(float pos, void *user), void *user);
+  void gen_sinc_table(uint32_t fir_hlen, uint32_t phases, float freq, float (*window_fn)(float pos, void *user), void *user);
 
   // phase = [0, 1)
   void calc_fir(float phase);

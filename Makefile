@@ -1,4 +1,4 @@
-SOURCES=resampler.cpp
+SOURCES=resampler.cpp window.cpp
 EXEC=test1 cli1
 
 SPECTROGRAMS=spectrogram_sweep1.png spectrogram_sweep2.png spectrogram_sweep3.png
