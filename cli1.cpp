@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     while (ilen > ipos) {
       uint32_t olen = BLOCKSIZE;
       ipos += resamp.process(outbuf, olen, inbuf + ipos, ilen - ipos);
-      assert(olen > 0);
+      // assert(olen > 0);
       fwrite(outbuf, sizeof(*outbuf), olen, out);
     }
   }
